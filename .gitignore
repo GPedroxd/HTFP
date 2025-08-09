@@ -4,6 +4,7 @@ Thumbs.db
 
 # Editor settings
 .vscode/
+.vs/
 .idea/
 
 # Logs
@@ -12,6 +13,7 @@ Thumbs.db
 # Environment files (secrets)
 .env
 .env.*
+appsettings*
 
 # Temporary files
 *.tmp
