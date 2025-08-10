@@ -4,8 +4,9 @@ public sealed class MainFile
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public string FilePath { get; init; } = default!;
-    public int TotalLines { get; private set; }
-    public int TotalSubFiles { get; private set; }
+    public int TotalLines { get; private set; } = 0;
+    private int _totalSubFiles;
+    public int TotalSubFiles => _totalSubFiles;
     public FileStatus Status { get; private set; } = FileStatus.Created;
     public DateTime StartProcessingDate { get; private set; } = DateTime.UtcNow;
     public DateTime? EndProcessingDate { get; private set; }
@@ -29,8 +30,11 @@ public sealed class MainFile
         }
     }
 
+    public void IncrementSplitFileCount()
+        => Interlocked.Increment(ref _totalSubFiles);
+
     public void SetAsFinished()
     {
-        
+        throw new NotImplementedException();
     }
 }

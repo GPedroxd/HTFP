@@ -1,4 +1,4 @@
-namespace HTFP.Shared.Queue;
+namespace HTFP.Shared.Bus;
 
 public interface IMessageBroker
 {

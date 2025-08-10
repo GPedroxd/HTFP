@@ -2,5 +2,5 @@ namespace HTFP.Shared.Storage;
 
 public interface IFileSpliter
 {
-    IAsyncEnumerable<Stream> Split(string path, int linePerFile = 1000);
+    IAsyncEnumerable<Stream> SplitAsync(string path, int linePerFile = 1000);
 }
