@@ -1,9 +1,15 @@
 {
-  "RabbitMQ": {
-    "HostName": "",
-    "Port": 1,
-    "QueueName": ""
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
   },
   "ConnectionStrings": {},
-  "Logging": {}
+  "RabbitMQConfig": {
+    "Host": "",
+    "Username": "",
+    "Password": ""
+  }
 }
