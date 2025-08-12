@@ -19,7 +19,7 @@ public sealed class FileSpliterService
         _fileSpliter = fileSpliter;
     }
 
-    public async Task ProcessFileAsync(ProcessFile fileToProcess)
+    public async Task SplitAsync(ProcessFile fileToProcess)
     {
         _logger.LogInformation("Processing file {FilePath}", fileToProcess.Path);
 
