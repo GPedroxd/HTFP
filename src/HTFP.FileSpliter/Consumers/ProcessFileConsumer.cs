@@ -31,7 +31,5 @@ public sealed class ProcessFileConsumer : IConsumer<ProcessFile>
 
             throw;
         }
-        
-        throw new NotImplementedException();
     }
 }

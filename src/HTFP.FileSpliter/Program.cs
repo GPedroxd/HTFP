@@ -5,6 +5,10 @@ using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using HTFP.Shared.Bus;
+using HTFP.Shared.Storage;
+using HTFP.FileSpliter.Services;
+using System;
+using Serilog;
 
 namespace HTFP.FileSpliter
 {
@@ -12,15 +16,32 @@ namespace HTFP.FileSpliter
     {
         public static async Task Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console()
+                .CreateLogger();
+
             await CreateHostBuilder(args).Build().RunAsync();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    var env = context.HostingEnvironment;
+                    config.SetBasePath(env.ContentRootPath);
+                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                    config.AddEnvironmentVariables();
+                })
                 .ConfigureServices((hostContext, services) =>
                 {
                     var enviroment = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
                     var rabbitConfig = enviroment.GetSection(nameof(RabbitMQConfig)).Get<RabbitMQConfig>();
+
+                    services.AddScoped<FileSpliterService>();
+                    services.AddScoped<IFileSpliter, LocalStorageFileSpliter>();
+
+                    services.AddSerilog();
 
                     services.AddMassTransit(x =>
                     {
