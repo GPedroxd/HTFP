@@ -3,7 +3,7 @@ namespace HTFP.Shared.Models;
 public sealed class MainFile
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
-    public string FilePath { get; init; } = default!;
+    public string Name { get; init; } = default!;
     public int TotalLines { get; private set; } = 0;
     private int _totalSubFiles;
     public int TotalSubFiles => _totalSubFiles;

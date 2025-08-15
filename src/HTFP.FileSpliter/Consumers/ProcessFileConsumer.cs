@@ -19,7 +19,7 @@ public sealed class ProcessFileConsumer : IConsumer<ProcessFile>
 
     public async Task Consume(ConsumeContext<ProcessFile> context)
     {
-        _logger.LogInformation("File {filepath} received to process at {date}.", context.Message.Path, DateTime.UtcNow);
+        _logger.LogInformation("File {filepath} received to process at {date}.", context.Message.Name, DateTime.UtcNow);
         
         try
         {
@@ -27,9 +27,9 @@ public sealed class ProcessFileConsumer : IConsumer<ProcessFile>
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "Fail to process file {filepath}.", context.Message.Path);
+            _logger.LogCritical(ex, "Fail to process file {filepath}.", context.Message.Name);
 
-            throw;
+            //throw;
         }
     }
 }

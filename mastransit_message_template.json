@@ -1,0 +1,20 @@
+{
+  "messageId": "00000000-0000-0000-0000-000000000000",
+  "messageType": [
+    "urn:message:HTFP.Shared.Bus.Messages:ProcessFile"
+  ],
+  "message": {
+    "Name": "teste1.csv"
+  },
+  "headers": {},
+  "host": {
+    "machineName": "your-machine",
+    "processName": "your-process",
+    "processId": 1234,
+    "assembly": "YourAssembly",
+    "assemblyVersion": "1.0.0.0",
+    "frameworkVersion": "net8.0",
+    "massTransitVersion": "8.x.x",
+    "operatingSystemVersion": "Linux 6.5"
+  }
+}

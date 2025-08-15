@@ -21,23 +21,27 @@ public sealed class FileSpliterService
 
     public async Task SplitAsync(ProcessFile fileToProcess)
     {
-        _logger.LogInformation("Processing file {FilePath}", fileToProcess.Path);
+        _logger.LogInformation("Processing file {FilePath}", fileToProcess.Name);
 
-        var mainFile = new MainFile { FilePath = fileToProcess.Path };
+        _logger.LogInformation("Application path: {path}", AppContext.BaseDirectory);
 
-        await foreach (var splitedfile in _fileSpliter.SplitAsync(fileToProcess.Path))
+        var mainFile = new MainFile { Name = fileToProcess.Name };
+
+        await foreach (var splitedfile in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}"))
         {
-            await ProcessSplitFile(splitedfile, mainFile);
+            await ProcessSplitFile(mainFile, splitedfile, mainFile.TotalSubFiles);
 
             mainFile.IncrementSplitFileCount();
         }
-
         //save main file
     }
 
-    private async Task ProcessSplitFile(Stream subfile, MainFile mainFile)
+    private async Task ProcessSplitFile(MainFile mainFile, Stream subfile, int position)
     {
         await Task.CompletedTask;
-        throw new NotImplementedException();
+        var subfileName = $"{mainFile.Id}.part-{position}.csv";
+        //write to new file
+        //publish message
+        _logger.LogInformation("Processed split file {FilePath} for main file {MainFilePath}", subfileName, mainFile.Name);
     }
 }
