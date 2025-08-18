@@ -1,22 +1,37 @@
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using HTFP.FileSpliter.Services;
 using HTFP.Shared.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace HTFP.FileSpliter;
 
 public sealed class LocalStorageFileSpliter : IFileSpliter
 {
     private const int DefaultBufferSize = 1024 * 64;
+    private readonly ILogger<LocalStorageFileSpliter> _logger;
 
-    public async IAsyncEnumerable<Stream> SplitAsync(string path, int linesPerFile = 1000)
+    public LocalStorageFileSpliter(ILogger<LocalStorageFileSpliter> logger)
     {
+        _logger = logger;
+    }
+
+    public async IAsyncEnumerable<Stream> SplitAsync(string path, int linesPerFile = 100)
+    {
+        var stopWatch = Stopwatch.StartNew();
+
         var newLine = (byte)'\n';
 
         var buffer = ArrayPool<byte>.Shared.Rent(DefaultBufferSize);
-        
+
         try
         {
+            var fileInfo = new FileInfo(path);
+            
+            DiagnosticsConfig.FileSize.Record(fileInfo.Length);
+
             using var fileStream = new FileStream(
                         path,
                         FileMode.Open,
@@ -49,7 +64,7 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
                     {
                         ms.Position = 0;
                         yield return ms;
-
+                        _logger.LogInformation("Split file created: {bytes} bytes", ms.Length);
                         ms = new MemoryStream();
 
                         lineCount = 0;
@@ -65,6 +80,10 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
+
+            stopWatch.Stop();
+            DiagnosticsConfig.SplitTime.Record(stopWatch.Elapsed.TotalSeconds);
+            _logger.LogInformation("File split completed in {Elapsed} seconds", stopWatch.Elapsed.TotalSeconds);
         }
     }
 }

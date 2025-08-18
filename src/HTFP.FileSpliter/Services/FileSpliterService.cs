@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using HTFP.Shared.Bus.Messages;
@@ -23,24 +22,36 @@ public sealed class FileSpliterService
     {
         _logger.LogInformation("Processing file {FilePath}", fileToProcess.Name);
 
-        _logger.LogInformation("Application path: {path}", AppContext.BaseDirectory);
-
         var mainFile = new MainFile { Name = fileToProcess.Name };
 
-        await foreach (var splitedfile in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}"))
+        await foreach (var splitedfile in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}", 100))
         {
             await ProcessSplitFile(mainFile, splitedfile, mainFile.TotalSubFiles);
 
             mainFile.IncrementSplitFileCount();
         }
+
         //save main file
     }
 
     private async Task ProcessSplitFile(MainFile mainFile, Stream subfile, int position)
     {
-        await Task.CompletedTask;
+        var filePath = Path.Combine(
+            "Output",
+            mainFile.Id.ToString(),
+            $"{mainFile.Id}.part-{position}.csv"
+        );
+
+        var dir = Path.GetDirectoryName(filePath);
+
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+        
         var subfileName = $"{mainFile.Id}.part-{position}.csv";
-        //write to new file
+
+        using var fileStream = new FileStream($"Output/{mainFile.Id}/{subfileName}", FileMode.Create, FileAccess.Write);
+        await subfile.CopyToAsync(fileStream);
+
         //publish message
         _logger.LogInformation("Processed split file {FilePath} for main file {MainFilePath}", subfileName, mainFile.Name);
     }

@@ -7,26 +7,47 @@ using Microsoft.Extensions.Configuration;
 using HTFP.Shared.Bus;
 using HTFP.Shared.Storage;
 using HTFP.FileSpliter.Services;
-using System;
 using Serilog;
+using System.Collections.Generic;
+using Serilog.Core;
+using System;
+using Microsoft.Extensions.Logging;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace HTFP.FileSpliter
 {
     public class Program
     {
-        public static async Task Main(string[] args)
-        {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.Console()
-                .CreateLogger();
+        private static Dictionary<string, object> OTAtt = new Dictionary<string, object>
+                                        {
+                                            {"service.name", "HTFP.FileSpliter"},
+                                            {"service.version", "1.0.0"},
+                                            {"service.instance.id", Environment.MachineName}
+                                        };
+        private static Logger logger = new LoggerConfiguration()
+                                    .MinimumLevel.Information()
+                                    .WriteTo.Console()
+                                    .WriteTo.OpenTelemetry(opts =>
+                                    {
+                                        opts.ResourceAttributes = OTAtt;
+                                        opts.Endpoint = "http://localhost:18889";
+                                    }, ignoreEnvironment: true)
+                                    .CreateLogger();
 
-            await CreateHostBuilder(args).Build().RunAsync();
-        }
+        public static async Task Main(string[] args)
+            => await CreateHostBuilder(args).Build().RunAsync();
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration((context, config) =>
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                Log.Logger = logger;
+                logging.AddSerilog(logger);
+            })
+            .ConfigureAppConfiguration((context, config) =>
                 {
                     var env = context.HostingEnvironment;
                     config.SetBasePath(env.ContentRootPath);
@@ -36,12 +57,28 @@ namespace HTFP.FileSpliter
                 .ConfigureServices((hostContext, services) =>
                 {
                     var enviroment = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
-                    var rabbitConfig = enviroment.GetSection(nameof(RabbitMQConfig)).Get<RabbitMQConfig>();
+                    var rabbitConfig = hostContext.Configuration.GetSection(nameof(RabbitMQConfig)).Get<RabbitMQConfig>();
+
+                    services.AddOpenTelemetry()
+                        .ConfigureResource(builder =>
+                        {
+                            builder.AddService("HTFP.FileSpliter")
+                                .AddAttributes(OTAtt);
+                        })
+                        .WithMetrics(metrics =>
+                        {
+                            metrics.AddAspNetCoreInstrumentation();
+                            metrics.AddMeter(DiagnosticsConfig.ServiceName);
+                            metrics.AddOtlpExporter();
+                        })
+                        .WithTracing(tracing =>
+                        {
+                            tracing.AddAspNetCoreInstrumentation();
+                            tracing.AddOtlpExporter();
+                        });
 
                     services.AddScoped<FileSpliterService>();
                     services.AddScoped<IFileSpliter, LocalStorageFileSpliter>();
-
-                    services.AddSerilog();
 
                     services.AddMassTransit(x =>
                     {
