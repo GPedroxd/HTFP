@@ -1,10 +1,10 @@
 {
   "messageId": "00000000-0000-0000-0000-000000000000",
   "messageType": [
-    "urn:message:HTFP.Shared.Bus.Messages:ProcessFile"
+    "urn:message:HTFP.Shared.Bus.Messages:SplitFile"
   ],
   "message": {
-    "Name": "teste1.csv"
+    "Name": "mtest.csv"
   },
   "headers": {},
   "host": {

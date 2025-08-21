@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using HTFP.Shared.Bus.Messages;
 using HTFP.Shared.Models;
 using HTFP.Shared.Storage;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 
 namespace HTFP.FileSpliter.Services;
@@ -11,14 +12,15 @@ public sealed class FileSpliterService
 {
     private readonly ILogger<FileSpliterService> _logger;
     private readonly IFileSpliter _fileSpliter;
-
-    public FileSpliterService(ILogger<FileSpliterService> logger, IFileSpliter fileSpliter)
+    private readonly IBus _bus;
+    public FileSpliterService(ILogger<FileSpliterService> logger, IFileSpliter fileSpliter, IBus bus)
     {
         _logger = logger;
         _fileSpliter = fileSpliter;
+        _bus = bus;
     }
 
-    public async Task SplitAsync(ProcessFile fileToProcess)
+    public async Task SplitAsync(SplitFile fileToProcess)
     {
        var mainFile = new MainFile { Name = fileToProcess.Name };
 
@@ -51,8 +53,13 @@ public sealed class FileSpliterService
         var subfileName = $"{mainFile.Id}.part-{position}.csv";
 
         using var fileStream = new FileStream($"Output/{mainFile.Id}/{subfileName}", FileMode.Create, FileAccess.Write);
+
         await subfile.CopyToAsync(fileStream);
 
-        //publish message
+        await _bus.Publish(new ProcessSubFile
+        {
+            ParentFileId = mainFile.Id,
+            FilePath = filePath
+        });
     }
 }

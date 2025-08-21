@@ -7,17 +7,17 @@ using Microsoft.Extensions.Logging;
 
 namespace HTFP.FileSpliter.Consumers;
 
-public sealed class ProcessFileConsumer : IConsumer<ProcessFile>
+public sealed class SplitFileConsumer : IConsumer<SplitFile>
 {
-    private readonly ILogger<ProcessFileConsumer> _logger;
+    private readonly ILogger<SplitFileConsumer> _logger;
     private readonly FileSpliterService _fileSpliterService;
-    public ProcessFileConsumer(ILogger<ProcessFileConsumer> logger, FileSpliterService fileSpliterService)
+    public SplitFileConsumer(ILogger<SplitFileConsumer> logger, FileSpliterService fileSpliterService)
     {
         _logger = logger;
         _fileSpliterService = fileSpliterService;
     }
 
-    public async Task Consume(ConsumeContext<ProcessFile> context)
+    public async Task Consume(ConsumeContext<SplitFile> context)
     {
         _logger.LogInformation("File {filepath} received to process at {date}.", context.Message.Name, DateTime.UtcNow);
         

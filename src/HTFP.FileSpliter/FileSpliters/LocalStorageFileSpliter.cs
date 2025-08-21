@@ -79,6 +79,12 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
                 if (start < bytesRead)
                     ms.Write(buffer, start, bytesRead - start);
             }
+
+            if (lineCount > 0)
+            {
+                ms.Position = 0;
+                yield return ms;
+            }
         }
         finally
         {

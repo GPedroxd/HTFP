@@ -1,6 +1,7 @@
 namespace HTFP.Shared.Bus.Messages;
 
-public record ProcessFile
+public record SplitFile
 {
     public string Name { get; init; } = default!;
 }
+
