@@ -20,9 +20,7 @@ public sealed class FileSpliterService
 
     public async Task SplitAsync(ProcessFile fileToProcess)
     {
-        _logger.LogInformation("Processing file {FilePath}", fileToProcess.Name);
-
-        var mainFile = new MainFile { Name = fileToProcess.Name };
+       var mainFile = new MainFile { Name = fileToProcess.Name };
 
         await foreach (var splitedfile in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}", 100))
         {
@@ -30,6 +28,9 @@ public sealed class FileSpliterService
 
             mainFile.IncrementSplitFileCount();
         }
+
+        _logger.LogInformation("File {FilePath} processed successfully", fileToProcess.Name);
+        _logger.LogInformation("Total subfiles created: {Count}", mainFile.TotalSubFiles);
 
         //save main file
     }
@@ -53,6 +54,5 @@ public sealed class FileSpliterService
         await subfile.CopyToAsync(fileStream);
 
         //publish message
-        _logger.LogInformation("Processed split file {FilePath} for main file {MainFilePath}", subfileName, mainFile.Name);
     }
 }

@@ -28,8 +28,11 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
 
         try
         {
+
             var fileInfo = new FileInfo(path);
-            
+
+            _logger.LogInformation("Processing file {FilePath} of {size} MBs", fileInfo.Name, (fileInfo.Length / (1024.0 * 1024.0)).ToString("#.##"));
+
             DiagnosticsConfig.FileSize.Record(fileInfo.Length);
 
             using var fileStream = new FileStream(
@@ -64,7 +67,7 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
                     {
                         ms.Position = 0;
                         yield return ms;
-                        _logger.LogInformation("Split file created: {bytes} bytes", ms.Length);
+
                         ms = new MemoryStream();
 
                         lineCount = 0;

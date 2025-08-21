@@ -68,13 +68,52 @@ namespace HTFP.FileSpliter
                         .WithMetrics(metrics =>
                         {
                             metrics.AddAspNetCoreInstrumentation();
-                            metrics.AddMeter(DiagnosticsConfig.ServiceName);
-                            metrics.AddOtlpExporter();
+                            metrics.AddMeter(DiagnosticsConfig.ServiceName)
+                                .AddView(instrumentName: "htfp.filespliter.file.size",
+                                new ExplicitBucketHistogramConfiguration
+                                {
+                                    Boundaries = new double[]
+                                    {
+                                        1 * 1024 * 1024,        // 1 MB
+                                        10 * 1024 * 1024,       // 10 MB
+                                        50 * 1024 * 1024,       // 50 MB
+                                        100 * 1024 * 1024,      // 100 MB
+                                        200 * 1024 * 1024,      // 200 MB
+                                        500 * 1024 * 1024,      // 500 MB
+                                        1024 * 1024 * 1024      // 1 GB
+                                    }
+                                })
+                                .AddView(instrumentName: "htfp.filespliter.file.splittime",
+                                new ExplicitBucketHistogramConfiguration
+                                {
+                                    Boundaries = new double[]
+                                    {
+                                        1,     // 1s
+                                        5,     // 5s
+                                        10,    // 10s
+                                        30,    // 30s
+                                        60,    // 1m
+                                        120,   // 2m
+                                        300,   // 5m
+                                        600    // 10m
+                                    }
+                                });
+
+                            metrics.AddOtlpExporter(options =>
+                            {
+                                options.Endpoint = new Uri("http://localhost:18889");
+                            });
+                            #if DEBUG
+                                metrics.AddConsoleExporter();
+                            #endif
                         })
                         .WithTracing(tracing =>
                         {
                             tracing.AddAspNetCoreInstrumentation();
-                            tracing.AddOtlpExporter();
+                            tracing.AddOtlpExporter(options =>
+                            {
+                                options.Endpoint = new Uri("http://localhost:18889");
+                            });
                         });
 
                     services.AddScoped<FileSpliterService>();

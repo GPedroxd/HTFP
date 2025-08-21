@@ -8,8 +8,8 @@ public static class DiagnosticsConfig
 {
     public const string ServiceName = "HTFP-FileSpliter";
 
-    public static Meter Meter = new(ServiceName);
+    public static readonly Meter Meter = new(ServiceName);
     public static Histogram<long> FileSize = Meter.CreateHistogram<long>("htfp.filespliter.file.size", "bytes", "File size in bytes");
-    public static Histogram<double> SplitTime = Meter.CreateHistogram<double>("htfp.filespliter.split.time", "ms", "Time taken to split the file");
+    public static Histogram<double> SplitTime = Meter.CreateHistogram<double>("htfp.filespliter.file.splittime", "ms", "Time taken to split the file");
     public static ActivitySource ActivitySource = new(ServiceName);
 }
