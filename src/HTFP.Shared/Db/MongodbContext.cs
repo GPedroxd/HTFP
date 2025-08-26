@@ -15,8 +15,8 @@ public class MongoDbContext : IDisposable
         _database = _client.GetDatabase(dbName);
     }
 
-    public IMongoCollection<ReconciliationFile> Users => _database.GetCollection<ReconciliationFile>("reconciliation_file");
-    public IMongoCollection<SubFile> Orders => _database.GetCollection<SubFile>("sub_file");
+    public IMongoCollection<ReconciliationFile> Reconciliation => _database.GetCollection<ReconciliationFile>("reconciliation_file");
+    public IMongoCollection<SubFile> SubFile => _database.GetCollection<SubFile>("sub_file");
 
     public async Task StartTransactionAsync()
     {

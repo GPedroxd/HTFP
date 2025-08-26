@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
 namespace HTFP.Shared.Db;
@@ -10,6 +12,7 @@ public static class MongodbExtensions
         this IServiceCollection services)
         where TContext : MongoDbContext
     {
+        BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.BsonType.String));
 
         var environment = services.BuildServiceProvider()
             .GetRequiredService<IConfiguration>();

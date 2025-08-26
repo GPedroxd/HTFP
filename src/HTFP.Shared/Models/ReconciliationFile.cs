@@ -6,7 +6,7 @@ public sealed class ReconciliationFile
     public string Name { get; init; } = default!;
     public int TotalLines { get; private set; } = 0;
     private int _totalSubFiles;
-    public int TotalSubFiles => _totalSubFiles;
+    public int TotalSubFiles { get => _totalSubFiles; private set => _totalSubFiles = value; } 
     public FileStatus Status { get; private set; } = FileStatus.Created;
     public DateTime StartProcessingDate { get; private set; } = DateTime.UtcNow;
     public DateTime? EndProcessingDate { get; private set; }
