@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using HTFP.Shared.Db;
 
 namespace HTFP.FileSpliter
 {
@@ -83,6 +84,9 @@ namespace HTFP.FileSpliter
                                 options.Endpoint = new Uri("http://localhost:18889");
                             });
                         });
+
+                        
+                    services.AddMongoDbContext<MongoDbContext>();
 
                     services.AddMassTransit(x =>
                     {
