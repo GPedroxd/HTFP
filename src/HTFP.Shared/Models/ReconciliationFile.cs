@@ -4,7 +4,9 @@ public sealed class ReconciliationFile
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public string Name { get; init; } = default!;
-    public int TotalLines { get; private set; } = 0;
+
+    private int _totalLines;
+    public int TotalLines { get => _totalLines; private set => _totalLines = value; }
     private int _totalSubFiles;
     public int TotalSubFiles { get => _totalSubFiles; private set => _totalSubFiles = value; } 
     public FileStatus Status { get; private set; } = FileStatus.Created;
@@ -32,6 +34,9 @@ public sealed class ReconciliationFile
 
     public void IncrementSplitFileCount()
         => Interlocked.Increment(ref _totalSubFiles);
+
+    public void IncrementLineCount(int count)
+        => Interlocked.Add(ref _totalLines, count);
 
     public void SetAsFinished()
     {

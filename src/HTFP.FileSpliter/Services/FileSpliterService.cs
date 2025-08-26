@@ -33,16 +33,18 @@ public sealed class FileSpliterService
 
         await _mongoDbContext.StartTransactionAsync();
 
-        await foreach (var splitedfile in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}", 10000))
+        await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}", 10000))
         {
             mainFile.IncrementSplitFileCount();
-
+            mainFile.IncrementLineCount(lineCount);
+            
             var filepath = await ProcessSplitFile(mainFile, splitedfile, mainFile.TotalSubFiles);
 
             insertSubFileTasks.Add(_mongoDbContext.SubFile.InsertOneAsync(new SubFile
             {
                 Name = filepath,
-                MainFileId = mainFile.Id
+                MainFileId = mainFile.Id,
+                TotalLines = lineCount
             }));
 
             toPublish.Add(new ProcessSubFile

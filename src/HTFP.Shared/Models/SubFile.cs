@@ -5,7 +5,7 @@ public sealed class SubFile
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public string Name { get; init; } = default!;
     public Guid MainFileId { get; init; }
-    public int TotalLines { get; private set; }
+    public int TotalLines { get; init; }
     public FileStatus Status { get; private set; } = FileStatus.Created;
     public DateTime? StartProcessingDate { get; private set; }
     public DateTime? EndProcessingDate { get; private set; }

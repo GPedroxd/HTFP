@@ -6,7 +6,7 @@ namespace HTFP.FileSpliter;
 
 public sealed class CloudStorageFileSpliter : IFileSpliter
 {
-    public IAsyncEnumerable<Stream> SplitAsync(string path, int linePerFile = 1000)
+    public IAsyncEnumerable<(Stream stream, int lineCount)> SplitAsync(string path, int linePerFile = 1000)
     {
         throw new System.NotImplementedException();
     }

@@ -18,7 +18,7 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
         _logger = logger;
     }
 
-    public async IAsyncEnumerable<Stream> SplitAsync(string path, int linesPerFile = 100)
+    public async IAsyncEnumerable<(Stream stream, int lineCount)> SplitAsync(string path, int linesPerFile = 100)
     {
         var stopWatch = Stopwatch.StartNew();
 
@@ -66,7 +66,7 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
                     if (lineCount >= linesPerFile)
                     {
                         ms.Position = 0;
-                        yield return ms;
+                        yield return (ms, lineCount);
 
                         ms = new MemoryStream();
 
@@ -83,7 +83,7 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
             if (lineCount > 0)
             {
                 ms.Position = 0;
-                yield return ms;
+                yield return (ms, lineCount);
             }
         }
         finally
