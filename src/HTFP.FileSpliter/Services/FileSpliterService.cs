@@ -22,7 +22,7 @@ public sealed class FileSpliterService
 
     public async Task SplitAsync(SplitFile fileToProcess)
     {
-       var mainFile = new MainFile { Name = fileToProcess.Name };
+       var mainFile = new ReconciliationFile { Name = fileToProcess.Name };
 
         await foreach (var splitedfile in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}", 100))
         {
@@ -37,7 +37,7 @@ public sealed class FileSpliterService
         //save main file
     }
 
-    private async Task ProcessSplitFile(MainFile mainFile, Stream subfile, int position)
+    private async Task ProcessSplitFile(ReconciliationFile mainFile, Stream subfile, int position)
     {
         var filePath = Path.Combine(
             "Output",

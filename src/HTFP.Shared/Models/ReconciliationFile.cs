@@ -1,6 +1,6 @@
 namespace HTFP.Shared.Models;
 
-public sealed class MainFile
+public sealed class ReconciliationFile
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public string Name { get; init; } = default!;
