@@ -1,0 +1,15 @@
+# Ignore build artifacts
+**/bin/
+**/obj/
+**/Properties/
+
+# Ignore version control / IDE files
+.git/
+.gitignore
+.vscode/
+*.code-workspace
+
+# Ignore local dev files
+**/appsettings.Development.json
+
+**/Dockerfile
