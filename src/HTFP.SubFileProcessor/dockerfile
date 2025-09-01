@@ -1,12 +1,21 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY src/HTFP.SubFileProcessor/HTFP.SubFileProcessor.csproj ./HTFP.SubFileProcessor
-COPY src/HTFP.Shared/HTFP.Shared.csproj ./HTFP.Shared
-RUN dotnet restore ./HTFP.SubFileProcessor/HTFP.SubFileProcessor.csproj
-COPY . .
-RUN dotnet publish "HTFP.SubFileProcessor.csproj" -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/runtime:9.0 as final
+COPY src/HTFP.SubFileProcessor/HTFP.SubFileProcessor.csproj ./HTFP.SubFileProcessor/
+COPY src/HTFP.Shared/HTFP.Shared.csproj ./HTFP.Shared/
+
+RUN dotnet restore ./HTFP.SubFileProcessor/HTFP.SubFileProcessor.csproj
+
+COPY src/ ./src/
+
+RUN dotnet publish ./src/HTFP.SubFileProcessor/HTFP.SubFileProcessor.csproj \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/runtime:9.0 AS final
 WORKDIR /app
+
 COPY --from=build /app/publish .
+
+# Entry point
 ENTRYPOINT ["dotnet", "HTFP.SubFileProcessor.dll"]
