@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -29,11 +30,11 @@ public sealed class FileSpliterService
         var toPublish = new List<ProcessSubFile>();
         var insertSubFileTasks = new List<Task>();
 
-        var mainFile = new ReconciliationFile { Name = fileToProcess.Name };
+        var mainFile = new ReconciliationFile($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}.{Guid.NewGuid()}", fileToProcess.Path);
 
         await _mongoDbContext.StartTransactionAsync();
 
-        await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync($"Samples/{fileToProcess.Name}", 10000))
+        await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync(fileToProcess.Path, 10000))
         {
             mainFile.IncrementSplitFileCount();
             mainFile.IncrementLineCount(lineCount);
@@ -60,7 +61,7 @@ public sealed class FileSpliterService
 
         await _mongoDbContext.CommitAsync();
         
-        _logger.LogInformation("File {FilePath} processed successfully", fileToProcess.Name);
+        _logger.LogInformation("File {FilePath} processed successfully", fileToProcess.Path);
         _logger.LogInformation("Total subfiles created: {Count}", mainFile.TotalSubFiles);
     }
 

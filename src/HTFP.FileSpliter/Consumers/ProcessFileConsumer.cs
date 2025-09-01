@@ -19,7 +19,7 @@ public sealed class SplitFileConsumer : IConsumer<SplitFile>
 
     public async Task Consume(ConsumeContext<SplitFile> context)
     {
-        _logger.LogInformation("File {filepath} received to process at {date}.", context.Message.Name, DateTime.UtcNow);
+        _logger.LogInformation("File {filepath} received to process at {date}.", context.Message.Path, DateTime.UtcNow);
         
         try
         {
@@ -27,7 +27,7 @@ public sealed class SplitFileConsumer : IConsumer<SplitFile>
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "Fail to process file {filepath}.", context.Message.Name);
+            _logger.LogCritical(ex, "Fail to process file {filepath}.", context.Message.Path);
 
             //throw;
         }

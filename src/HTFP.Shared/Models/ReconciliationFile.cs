@@ -4,7 +4,7 @@ public sealed class ReconciliationFile
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public string Name { get; init; } = default!;
-
+    public string Path { get; init; } = default!;
     private int _totalLines;
     public int TotalLines { get => _totalLines; private set => _totalLines = value; }
     private int _totalSubFiles;
@@ -30,6 +30,20 @@ public sealed class ReconciliationFile
 
             return ProcessingTime.Value.ToString(@"hh\:mm\:ss");
         }
+    }
+
+    private ReconciliationFile() { }
+
+    public ReconciliationFile(string name, string path)
+    {
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Value cannot be null or empty.", nameof(name));
+
+        if (string.IsNullOrEmpty(path))
+            throw new ArgumentException("Value cannot be null or empty.", nameof(path));
+
+        Name = name;
+        Path = path;
     }
 
     public void IncrementSplitFileCount()
