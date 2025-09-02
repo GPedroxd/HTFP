@@ -69,7 +69,7 @@ namespace HTFP.FileSpliter
                         .WithMetrics(metrics =>
                         {
                             metrics.AddAspNetCoreInstrumentation();
-                            metrics.AddMeter(DiagnosticsConfig.ServiceName)
+                            metrics.AddMeter(FileSpliterDiagnosticsConfig.ServiceName)
                                 .AddView(instrumentName: "htfp.filespliter.file.size",
                                 new ExplicitBucketHistogramConfiguration
                                 {

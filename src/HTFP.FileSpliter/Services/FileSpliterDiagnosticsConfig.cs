@@ -4,7 +4,7 @@ using System.Diagnostics.Metrics;
 
 namespace HTFP.FileSpliter.Services;
 
-public static class DiagnosticsConfig
+public static class FileSpliterDiagnosticsConfig
 {
     public const string ServiceName = "HTFP-FileSpliter";
 

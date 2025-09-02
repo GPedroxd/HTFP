@@ -33,7 +33,7 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
 
             _logger.LogInformation("Processing file {FilePath} of {size} MBs", fileInfo.Name, (fileInfo.Length / (1024.0 * 1024.0)).ToString("#.##"));
 
-            DiagnosticsConfig.FileSize.Record(fileInfo.Length);
+            FileSpliterDiagnosticsConfig.FileSize.Record(fileInfo.Length);
 
             using var fileStream = new FileStream(
                         path,
@@ -91,7 +91,7 @@ public sealed class LocalStorageFileSpliter : IFileSpliter
             ArrayPool<byte>.Shared.Return(buffer);
 
             stopWatch.Stop();
-            DiagnosticsConfig.SplitTime.Record(stopWatch.Elapsed.TotalSeconds);
+            FileSpliterDiagnosticsConfig.SplitTime.Record(stopWatch.Elapsed.TotalSeconds);
             _logger.LogInformation("File split completed in {Elapsed} seconds", stopWatch.Elapsed.TotalSeconds);
         }
     }
