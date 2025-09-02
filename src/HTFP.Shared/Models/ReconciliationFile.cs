@@ -5,6 +5,8 @@ public sealed class ReconciliationFile
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public string Name { get; init; } = default!;
     public string Path { get; init; } = default!;
+    public string OutputPath { get; init; } = default!;
+    public string SubfilePath { get; init; } = default!;
     private int _totalLines;
     public int TotalLines { get => _totalLines; private set => _totalLines = value; }
     private int _totalSubFiles;
@@ -44,6 +46,8 @@ public sealed class ReconciliationFile
 
         Name = name;
         Path = path;
+        SubfilePath = $"{Id}/Subfiles/";
+        OutputPath = $"{Id}/Output/";
     }
 
     public void IncrementSplitFileCount()

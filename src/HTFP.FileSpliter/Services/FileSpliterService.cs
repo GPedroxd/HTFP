@@ -67,10 +67,11 @@ public sealed class FileSpliterService
 
     private async Task<string> ProcessSplitFile(ReconciliationFile mainFile, Stream subfile, int position)
     {
+        var subfileName = $"{mainFile.Id}.part-{position}.csv";
+
         var filePath = Path.Combine(
-            "Output",
-            mainFile.Id.ToString(),
-            $"{mainFile.Id}.part-{position}.csv"
+            mainFile.SubfilePath,
+            subfileName
         );
 
         var dir = Path.GetDirectoryName(filePath);
@@ -78,9 +79,7 @@ public sealed class FileSpliterService
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
 
-        var subfileName = $"{mainFile.Id}.part-{position}.csv";
-
-        using var fileStream = new FileStream($"Output/{mainFile.Id}/{subfileName}", FileMode.Create, FileAccess.Write);
+        using var fileStream = new FileStream($"{filePath}", FileMode.Create, FileAccess.Write);
 
         await subfile.CopyToAsync(fileStream);
 
