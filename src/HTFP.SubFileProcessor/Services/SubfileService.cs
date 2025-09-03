@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using HTFP.Shared.Db;
 using HTFP.Shared.Models;
 using HTFP.Shared.Storage;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 
 namespace HTFP.SubFileProcessor.Services;
 
@@ -29,7 +31,12 @@ public sealed class SubfileService
         await foreach (var order in _orderExtractor.ExtractOrdersAsync(filePath))
             ordersExecuted.Add(order);
 
-        //load the orders from yesterday
+        var minDateFilter = ordersExecuted.Min(o => o.DateTime);
+        var maxDateFilter = ordersExecuted.Max(o => o.DateTime);
+
+        var existingOrders = await (await _dbContext.ExecutionOrder
+            .FindAsync(o => o.DateTime >= minDateFilter && o.DateTime <= maxDateFilter))
+            .ToListAsync();
 
         //compare each order(can be done in parallel)
 

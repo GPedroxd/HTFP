@@ -17,6 +17,7 @@ public class MongoDbContext : IDisposable
 
     public IMongoCollection<ReconciliationFile> Reconciliation => _database.GetCollection<ReconciliationFile>("reconciliation_file");
     public IMongoCollection<SubFile> SubFile => _database.GetCollection<SubFile>("sub_file");
+    public IMongoCollection<ExecutionOrder> ExecutionOrder => _database.GetCollection<ExecutionOrder>("execution_order");
 
     public async Task StartTransactionAsync()
     {
