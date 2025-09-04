@@ -23,7 +23,7 @@ public sealed class SubFileConsumer : IConsumer<ProcessSubFile>
 
         try
         {
-            await _subfileService.ProcessSubfileAsync(context.Message.FilePath);
+            await _subfileService.ProcessSubfileAsync(context.Message);
         }
         catch (Exception ex)
         {

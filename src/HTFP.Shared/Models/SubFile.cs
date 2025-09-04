@@ -6,7 +6,7 @@ public sealed class SubFile
     public string Name { get; init; } = default!;
     public string Path { get; init; } = default!;
     public bool HasDivergentsOrders { get; private set; }
-    public string? OutputPath { get; private set; } 
+    public string? OutputPath { get; private set; }
     public Guid ReconciliationFileId { get; init; }
     public int TotalLines { get; init; }
     public FileStatus Status { get; private set; } = FileStatus.Created;
@@ -36,6 +36,15 @@ public sealed class SubFile
     {
         HasDivergentsOrders = divergentOrdersCount > 0;
         Status = FileStatus.SuccessfullyProcessed;
+        EndProcessingDate = DateTime.UtcNow;
+
+        if (HasDivergentsOrders)
+            OutputPath = $"{ReconciliationFileId}/subfilesOutput/{Name}-divergents.csv";
+    }
+    
+    public void MarkAsPartiallyProcessed()
+    {
+        Status = FileStatus.PartiallyProcessed;
         EndProcessingDate = DateTime.UtcNow;
 
         if (HasDivergentsOrders)

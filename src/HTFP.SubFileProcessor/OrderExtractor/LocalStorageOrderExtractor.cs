@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DnsClient.Internal;
 using HTFP.Shared.Models;
 using HTFP.Shared.Storage;
+using HTFP.SubFileProcessor.Services;
 using Microsoft.Extensions.Logging;
 
 namespace HTFP.SubFileProcessor.OrderExtractor;
@@ -21,21 +23,31 @@ public sealed class LocalStorageOrderExtractor : IOrderExtractor
     {
         _logger.LogInformation("Extracting orders from file: {FilePath}", filePath);
 
-        var fileInfo = new FileInfo(filePath);
-        using var reader = fileInfo.OpenRead();
-        using var streamReader = new StreamReader(reader);
+        var stopWatch = Stopwatch.StartNew();
 
-        string line;
-
-        while ((line = await streamReader.ReadLineAsync()) != null)
+        try
         {
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
+            var fileInfo = new FileInfo(filePath);
+            using var reader = fileInfo.OpenRead();
+            using var streamReader = new StreamReader(reader);
 
-            yield return ParseLineToOrder(line);
+            string line;
+
+            while ((line = await streamReader.ReadLineAsync()) != null)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                yield return ParseLineToOrder(line);
+            }
         }
-        
-        _logger.LogInformation("Finished extracting orders from file: {FilePath}", filePath);
+        finally
+        {
+            stopWatch.Stop();
+            SubFileProcessorDiagnosticsConfig.FileProcessTime.Record(stopWatch.ElapsedMilliseconds);
+
+            _logger.LogInformation("Finished extracting orders from file: {FilePath} in {ElapsedMilliseconds} ms", filePath, stopWatch.ElapsedMilliseconds);
+        } 
     }
 
     private ExecutionOrder ParseLineToOrder(string line)

@@ -40,9 +40,17 @@ public sealed class SubfileService
             .FindAsync(o => o.DateTime >= minDateFilter && o.DateTime <= maxDateFilter))
             .ToListAsync();
 
-        var ordersDivergents = OrderComparer.GetDivergentOrders(ordersExecuted, existingOrders);
-
         var subFile = await _dbContext.SubFile.Find(f => f.Id == processSubFile.Id).FirstOrDefaultAsync();
+
+        if (!existingOrders.Any())
+        {
+            _logger.LogWarning("No existing orders found for sub-file: {FileName}", processSubFile.FilePath);
+            subFile.MarkAsPartiallyProcessed();
+            await _dbContext.SubFile.ReplaceOneAsync(f => f.Id == subFile.Id, subFile);
+            return;
+        }
+
+        var ordersDivergents = OrderComparer.GetDivergentOrders(ordersExecuted, existingOrders);
 
         subFile.MarkasAsProcessed(ordersDivergents.Count);
 
@@ -54,6 +62,26 @@ public sealed class SubfileService
 
     private void SaveDivergentOrders(SubFile subFile, IEnumerable<(ExecutionOrder executedOrder, ExecutionOrder expectedOrder)> divergentOrders)
     {
+        var outputPath = subFile.OutputPath;
+        var directory = Path.GetDirectoryName(outputPath);
 
-    }
+        if (!Directory.Exists(directory))
+            Directory.CreateDirectory(directory!);
+
+        using var writer = new StreamWriter(outputPath);
+
+        foreach (var (executedOrder, expectedOrder) in divergentOrders)
+        {
+            writer.WriteLine($"{expectedOrder.Id},{executedOrder.ExternalId},"+
+                             $"{expectedOrder.DateTime},{executedOrder.DateTime},"+
+                             $"{expectedOrder.AssetId},{executedOrder.AssetId},"+
+                             $"{expectedOrder.TradingAccount},{executedOrder.TradingAccount},"+
+                             $"{expectedOrder.Quantity},{executedOrder.Quantity},"+
+                             $"{expectedOrder.UnitPrice},{executedOrder.UnitPrice}"
+                            );
+        }
+        
+        writer.Flush();
+        writer.Close();
+    }    
 }
