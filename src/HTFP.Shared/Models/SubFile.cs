@@ -4,7 +4,10 @@ public sealed class SubFile
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public string Name { get; init; } = default!;
-    public Guid MainFileId { get; init; }
+    public string Path { get; init; } = default!;
+    public bool HasDivergentsOrders { get; private set; }
+    public string? OutputPath { get; private set; } 
+    public Guid ReconciliationFileId { get; init; }
     public int TotalLines { get; init; }
     public FileStatus Status { get; private set; } = FileStatus.Created;
     public DateTime? StartProcessingDate { get; private set; }
@@ -27,5 +30,15 @@ public sealed class SubFile
 
             return ProcessingTime.Value.ToString(@"hh\:mm\:ss");
         }
+    }
+
+    public void MarkasAsProcessed(int divergentOrdersCount)
+    {
+        HasDivergentsOrders = divergentOrdersCount > 0;
+        Status = FileStatus.SuccessfullyProcessed;
+        EndProcessingDate = DateTime.UtcNow;
+
+        if (HasDivergentsOrders)
+            OutputPath = $"{ReconciliationFileId}/subfilesOutput/{Name}-divergents.csv";
     }
 }

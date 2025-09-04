@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using HTFP.Shared.Bus.Messages;
 using HTFP.Shared.Db;
 using HTFP.Shared.Models;
 using HTFP.Shared.Storage;
@@ -22,13 +24,13 @@ public sealed class SubfileService
         _dbContext = dbContext;
     }
 
-    public async Task ProcessSubfileAsync(string filePath)
+    public async Task ProcessSubfileAsync(ProcessSubFile processSubFile)
     {
-        _logger.LogInformation("Processing sub-file: {FileName}", filePath);
+        _logger.LogInformation("Processing sub-file: {FileName}", processSubFile.FilePath);
 
         var ordersExecuted = new List<ExecutionOrder>();
 
-        await foreach (var order in _orderExtractor.ExtractOrdersAsync(filePath))
+        await foreach (var order in _orderExtractor.ExtractOrdersAsync(processSubFile.FilePath))
             ordersExecuted.Add(order);
 
         var minDateFilter = ordersExecuted.Min(o => o.DateTime);
@@ -40,6 +42,18 @@ public sealed class SubfileService
 
         var ordersDivergents = OrderComparer.GetDivergentOrders(ordersExecuted, existingOrders);
 
-        //save file with divergents
-     }
+        var subFile = await _dbContext.SubFile.Find(f => f.Id == processSubFile.Id).FirstOrDefaultAsync();
+
+        subFile.MarkasAsProcessed(ordersDivergents.Count);
+
+        if (ordersDivergents.Any())
+            SaveDivergentOrders(subFile, ordersDivergents);
+
+        await _dbContext.SubFile.ReplaceOneAsync(f => f.Id == subFile.Id, subFile);
+    }
+
+    private void SaveDivergentOrders(SubFile subFile, IEnumerable<(ExecutionOrder executedOrder, ExecutionOrder expectedOrder)> divergentOrders)
+    {
+
+    }
 }

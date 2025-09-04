@@ -38,20 +38,30 @@ public sealed class FileSpliterService
         {
             mainFile.IncrementSplitFileCount();
             mainFile.IncrementLineCount(lineCount);
-            
-            var filepath = await ProcessSplitFile(mainFile, splitedfile, mainFile.TotalSubFiles);
 
-            insertSubFileTasks.Add(_mongoDbContext.SubFile.InsertOneAsync(new SubFile
+            var fileName = $"{mainFile.Id}.part-{mainFile.TotalSubFiles}.csv";
+            var filePath = Path.Combine(
+                        mainFile.SubfilePath,
+                        fileName
+                    );
+
+            var subFile = new SubFile
             {
-                Name = filepath,
-                MainFileId = mainFile.Id,
+                Name = fileName,
+                Path = filePath,
+                ReconciliationFileId = mainFile.Id,
                 TotalLines = lineCount
-            }));
+            };  
+
+            await SaveSplitFile(subFile.Path, splitedfile);
+
+            insertSubFileTasks.Add(_mongoDbContext.SubFile.InsertOneAsync(subFile));
 
             toPublish.Add(new ProcessSubFile
             {
                 ParentFileId = mainFile.Id,
-                FilePath = filepath
+                FilePath = subFile.Path,
+                Id = subFile.Id
             });
         }
 
@@ -65,15 +75,8 @@ public sealed class FileSpliterService
         _logger.LogInformation("Total subfiles created: {Count}", mainFile.TotalSubFiles);
     }
 
-    private async Task<string> ProcessSplitFile(ReconciliationFile mainFile, Stream subfile, int position)
+    private async Task SaveSplitFile(string filePath, Stream subfile)
     {
-        var subfileName = $"{mainFile.Id}.part-{position}.csv";
-
-        var filePath = Path.Combine(
-            mainFile.SubfilePath,
-            subfileName
-        );
-
         var dir = Path.GetDirectoryName(filePath);
 
         if (!string.IsNullOrEmpty(dir))
@@ -82,7 +85,5 @@ public sealed class FileSpliterService
         using var fileStream = new FileStream($"{filePath}", FileMode.Create, FileAccess.Write);
 
         await subfile.CopyToAsync(fileStream);
-
-        return subfileName;
     }
 }
