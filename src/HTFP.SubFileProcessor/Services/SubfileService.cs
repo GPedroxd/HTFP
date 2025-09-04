@@ -38,8 +38,8 @@ public sealed class SubfileService
             .FindAsync(o => o.DateTime >= minDateFilter && o.DateTime <= maxDateFilter))
             .ToListAsync();
 
-        //compare each order(can be done in parallel)
+        var ordersDivergents = OrderComparer.GetDivergentOrders(ordersExecuted, existingOrders);
 
         //save file with divergents
-    }
+     }
 }
