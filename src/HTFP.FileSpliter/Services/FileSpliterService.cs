@@ -13,6 +13,7 @@ namespace HTFP.FileSpliter.Services;
 
 public sealed class FileSpliterService
 {
+    private readonly string _dataFolder = Environment.GetEnvironmentVariable("DATA_FOLDER") ?? "/etc/data";
     private readonly ILogger<FileSpliterService> _logger;
     private readonly MongoDbContext _mongoDbContext;
     private readonly IFileSpliter _fileSpliter;
@@ -34,13 +35,14 @@ public sealed class FileSpliterService
 
         await _mongoDbContext.StartTransactionAsync();
 
-        await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync(fileToProcess.Path, 10000))
+        await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync(Path.Combine(_dataFolder,fileToProcess.Path), 10000))
         {
             mainFile.IncrementSplitFileCount();
             mainFile.IncrementLineCount(lineCount);
 
             var fileName = $"{mainFile.Id}.part-{mainFile.TotalSubFiles}.csv";
             var filePath = Path.Combine(
+                        _dataFolder,
                         mainFile.SubfilePath,
                         fileName
                     );

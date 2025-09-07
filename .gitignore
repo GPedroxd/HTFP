@@ -18,3 +18,5 @@ appsettings*
 # Temporary files
 *.tmp
 *.swp
+
+samples/

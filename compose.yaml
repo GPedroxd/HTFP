@@ -4,7 +4,9 @@ services:
       context: .
       dockerfile: ./src/HTFP.FileSpliter/dockerfile
     volumes:
-      - htfp-data:/etc/data
+      - ./samples:/etc/data
+    environment:
+      - DATA_FOLDER=/etc/data
     depends_on:
       - rabbitmq
       - aspire-dashboard
@@ -13,7 +15,9 @@ services:
       context: .
       dockerfile: ./src/HTFP.SubFileProcessor/dockerfile
     volumes:
-      - htfp-data:/etc/data
+      - ./samples:/etc/data
+    environment:
+      - DATA_FOLDER=/etc/data
     depends_on:
       - rabbitmq
       - aspire-dashboard
@@ -34,6 +38,7 @@ services:
       RABBITMQ_DEFAULT_USER: "guest"
       RABBITMQ_DEFAULT_PASS: "guest"
 
-volumes:
-  htfp-data:
-    driver: local
+# Uncomment the following to use a named volume instead of a bind mount
+# volumes:
+  # htfp-data:
+  #   driver: local

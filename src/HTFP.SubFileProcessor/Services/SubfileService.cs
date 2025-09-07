@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace HTFP.SubFileProcessor.Services;
 
 public sealed class SubfileService
 {
+    
+    private readonly string _dataFolder = Environment.GetEnvironmentVariable("DATA_FOLDER") ?? "/etc/data";
     private readonly ILogger<SubfileService> _logger;
     private readonly IOrderExtractor _orderExtractor;
     private readonly MongoDbContext _dbContext;
@@ -62,7 +65,7 @@ public sealed class SubfileService
 
     private void SaveDivergentOrders(SubFile subFile, IEnumerable<(ExecutionOrder executedOrder, ExecutionOrder expectedOrder)> divergentOrders)
     {
-        var outputPath = subFile.OutputPath;
+        var outputPath = Path.Combine(_dataFolder, subFile.OutputPath);
         var directory = Path.GetDirectoryName(outputPath);
 
         if (!Directory.Exists(directory))

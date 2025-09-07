@@ -14,6 +14,10 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using HTFP.Shared.Db;
+using HTFP.SubFileProcessor.Consumers;
+using HTFP.SubFileProcessor.Services;
+using HTFP.Shared.Storage;
+using HTFP.SubFileProcessor.OrderExtractor;
 
 namespace HTFP.FileSpliter
 {
@@ -68,7 +72,37 @@ namespace HTFP.FileSpliter
                         .WithMetrics(metrics =>
                         {
                             metrics.AddAspNetCoreInstrumentation();
-
+                            metrics.AddMeter(SubFileProcessorDiagnosticsConfig.ServiceName)
+                                .AddView(instrumentName: "htfp.subfileprocessor.file.processtime",
+                                    new ExplicitBucketHistogramConfiguration
+                                    {
+                                        Boundaries = new double[]
+                                            {
+                                                1,     // 1s
+                                                5,     // 5s
+                                                10,    // 10s
+                                                30,    // 30s
+                                                60,    // 1m
+                                                120,   // 2m
+                                                300,   // 5m
+                                                600    // 10m
+                                            }
+                                    })
+                                    .AddView(instrumentName: "htfp.subfileprocessor.line.processtime",
+                                        new ExplicitBucketHistogramConfiguration
+                                        {
+                                            Boundaries = new double[]
+                                                {
+                                                    1,     // 1s
+                                                    5,     // 5s
+                                                    10,    // 10s
+                                                    30,    // 30s
+                                                    60,    // 1m
+                                                    120,   // 2m
+                                                    300,   // 5m
+                                                    600    // 10m
+                                                }
+                                        });
                             metrics.AddOtlpExporter(options =>
                             {
                                 options.Endpoint = new Uri(otelUrl);
@@ -88,6 +122,8 @@ namespace HTFP.FileSpliter
 
                         
                     services.AddMongoDbContext<MongoDbContext>();
+                    services.AddScoped<SubfileService>();
+                    services.AddScoped<IOrderExtractor, LocalStorageOrderExtractor>();
 
                     services.AddMassTransit(x =>
                     {

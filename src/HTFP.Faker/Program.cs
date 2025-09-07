@@ -33,7 +33,7 @@ var faker = new Faker<ExecutionOrder>("en")
 
 var orders = faker.Generate(count);
 
-string filePath = $"../HTFP.FileSpliter/Samples/{fileName}.csv";
+string filePath = $"../../samples/{fileName}.csv";
 using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
 
 foreach (var order in orders)
