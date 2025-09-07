@@ -21,6 +21,7 @@ namespace HTFP.FileSpliter
 {
     public class Program
     {
+        private const string otelUrl = "http://aspire-dashboard:18889";
         private static Dictionary<string, object> OTAtt = new Dictionary<string, object>
                                         {
                                             {"service.name", "HTFP.FileSpliter"},
@@ -33,7 +34,7 @@ namespace HTFP.FileSpliter
                                     .WriteTo.OpenTelemetry(opts =>
                                     {
                                         opts.ResourceAttributes = OTAtt;
-                                        opts.Endpoint = "http://localhost:18889";
+                                        opts.Endpoint = otelUrl;
                                     }, ignoreEnvironment: true)
                                     .CreateLogger();
 
@@ -102,7 +103,7 @@ namespace HTFP.FileSpliter
 
                             metrics.AddOtlpExporter(options =>
                             {
-                                options.Endpoint = new Uri("http://localhost:18889");
+                                options.Endpoint = new Uri(otelUrl);
                             });
                             #if DEBUG
                                 metrics.AddConsoleExporter();
@@ -113,7 +114,7 @@ namespace HTFP.FileSpliter
                             tracing.AddAspNetCoreInstrumentation();
                             tracing.AddOtlpExporter(options =>
                             {
-                                options.Endpoint = new Uri("http://localhost:18889");
+                                options.Endpoint = new Uri(otelUrl);
                             });
                         });
 

@@ -4,7 +4,7 @@
     "urn:message:HTFP.Shared.Bus.Messages:SplitFile"
   ],
   "message": {
-    "Name": "mtest.csv"
+    "Path": "mtest.csv"
   },
   "headers": {},
   "host": {
