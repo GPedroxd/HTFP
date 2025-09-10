@@ -19,6 +19,8 @@ public sealed class SplitFileConsumer : IConsumer<SplitFile>
 
     public async Task Consume(ConsumeContext<SplitFile> context)
     {
+        using var activity = FileSpliterDiagnosticsConfig.ActivitySource.StartActivity("HTPF.FileSpliter");
+        
         _logger.LogInformation("File {filepath} received to process at {date}.", context.Message.Path, DateTime.UtcNow);
         
         try

@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using HTFP.Shared.Bus.Messages;
 using HTFP.SubFileProcessor.Services;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
 
 namespace HTFP.SubFileProcessor.Consumers;
 
@@ -19,7 +22,11 @@ public sealed class SubFileConsumer : IConsumer<ProcessSubFile>
 
     public async Task Consume(ConsumeContext<ProcessSubFile> context)
     {
-        _logger.LogInformation("Processing message {mid}", context.MessageId);
+        var fileId = Baggage.Current.GetBaggage("file.id");
+        var activity = Activity.Current;
+        activity?.SetTag("file.id", fileId);
+        
+        _logger.LogInformation("Processing message {mid} from {fileid} file.", context.MessageId, fileId);
 
         try
         {

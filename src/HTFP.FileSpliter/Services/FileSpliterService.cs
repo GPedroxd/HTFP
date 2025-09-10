@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using HTFP.Shared.Bus.Messages;
@@ -32,6 +33,10 @@ public sealed class FileSpliterService
         var insertSubFileTasks = new List<Task>();
 
         var mainFile = new ReconciliationFile($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}.{Guid.NewGuid()}", fileToProcess.Path);
+
+        var currentActivity = Activity.Current;
+        currentActivity?.SetTag("file.id", mainFile.Id);
+        currentActivity?.SetBaggage("file.id", mainFile.Id.ToString());
 
         await _mongoDbContext.StartTransactionAsync();
 

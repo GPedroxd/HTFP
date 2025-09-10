@@ -16,6 +16,9 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using HTFP.Shared.Db;
+using MassTransit.Monitoring;
+using HTFP.Shared.Models;
+using MassTransit.Logging;
 
 namespace HTFP.FileSpliter
 {
@@ -70,6 +73,7 @@ namespace HTFP.FileSpliter
                         .WithMetrics(metrics =>
                         {
                             metrics.AddAspNetCoreInstrumentation();
+                            metrics.AddMeter(InstrumentationOptions.MeterName);
                             metrics.AddMeter(FileSpliterDiagnosticsConfig.ServiceName)
                                 .AddView(instrumentName: "htfp.filespliter.file.size",
                                 new ExplicitBucketHistogramConfiguration
@@ -112,6 +116,9 @@ namespace HTFP.FileSpliter
                         .WithTracing(tracing =>
                         {
                             tracing.AddAspNetCoreInstrumentation();
+                            
+                            tracing.AddSource(FileSpliterDiagnosticsConfig.ServiceName);
+                            tracing.AddSource(DiagnosticHeaders.DefaultListenerName);
                             tracing.AddOtlpExporter(options =>
                             {
                                 options.Endpoint = new Uri(otelUrl);

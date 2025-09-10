@@ -18,6 +18,8 @@ using HTFP.SubFileProcessor.Consumers;
 using HTFP.SubFileProcessor.Services;
 using HTFP.Shared.Storage;
 using HTFP.SubFileProcessor.OrderExtractor;
+using MassTransit.Monitoring;
+using MassTransit.Logging;
 
 namespace HTFP.FileSpliter
 {
@@ -72,6 +74,7 @@ namespace HTFP.FileSpliter
                         .WithMetrics(metrics =>
                         {
                             metrics.AddAspNetCoreInstrumentation();
+                            metrics.AddMeter(InstrumentationOptions.MeterName);
                             metrics.AddMeter(SubFileProcessorDiagnosticsConfig.ServiceName)
                                 .AddView(instrumentName: "htfp.subfileprocessor.file.processtime",
                                     new ExplicitBucketHistogramConfiguration
@@ -114,6 +117,8 @@ namespace HTFP.FileSpliter
                         .WithTracing(tracing =>
                         {
                             tracing.AddAspNetCoreInstrumentation();
+                            tracing.AddSource(SubFileProcessorDiagnosticsConfig.ServiceName);
+                            tracing.AddSource(DiagnosticHeaders.DefaultListenerName);
                             tracing.AddOtlpExporter(options =>
                             {
                                 options.Endpoint = new Uri(otelUrl);
