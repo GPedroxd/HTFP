@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using MassTransit.Logging;
+using StackExchange.Redis;
 
 namespace HTFP.Coordinator;
 
@@ -57,6 +58,12 @@ public class Program
             {
                 var enviroment = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
                 var rabbitConfig = hostContext.Configuration.GetSection(nameof(RabbitMQConfig)).Get<RabbitMQConfig>();
+
+                services.AddSingleton(opts =>
+                {
+                    var redisConnectionString = enviroment.GetConnectionString("RedisConnection");
+                    return ConnectionMultiplexer.Connect(redisConnectionString);
+                });
 
                 services.AddOpenTelemetry()
                     .ConfigureResource(builder =>

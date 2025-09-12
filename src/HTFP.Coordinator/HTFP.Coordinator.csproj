@@ -8,4 +8,8 @@
   <ItemGroup>
     <ProjectReference Include="..\HTFP.Shared\HTFP.Shared.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="2.9.17" />
+  </ItemGroup>
 </Project>
