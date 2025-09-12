@@ -14,7 +14,6 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using HTFP.Shared.Db;
-using HTFP.SubFileProcessor.Consumers;
 using HTFP.SubFileProcessor.Services;
 using HTFP.Shared.Storage;
 using HTFP.SubFileProcessor.OrderExtractor;
@@ -125,7 +124,6 @@ namespace HTFP.FileSpliter
                             });
                         });
 
-                        
                     services.AddMongoDbContext<MongoDbContext>();
                     services.AddScoped<SubfileService>();
                     services.AddScoped<IOrderExtractor, LocalStorageOrderExtractor>();

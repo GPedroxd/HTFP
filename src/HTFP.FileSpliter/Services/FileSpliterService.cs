@@ -40,7 +40,7 @@ public sealed class FileSpliterService
 
         await _mongoDbContext.StartTransactionAsync();
 
-        await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync(Path.Combine(_dataFolder,fileToProcess.Path), 10000))
+        await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync(Path.Combine(_dataFolder, fileToProcess.Path), 10000))
         {
             mainFile.IncrementSplitFileCount();
             mainFile.IncrementLineCount(lineCount);
@@ -58,7 +58,7 @@ public sealed class FileSpliterService
                 Path = filePath,
                 ReconciliationFileId = mainFile.Id,
                 TotalLines = lineCount
-            };  
+            };
 
             await SaveSplitFile(subFile.Path, splitedfile);
 
@@ -66,7 +66,7 @@ public sealed class FileSpliterService
 
             toPublish.Add(new ProcessSubFile
             {
-                ParentFileId = mainFile.Id,
+                ReconciliationId = mainFile.Id,
                 FilePath = subFile.Path,
                 Id = subFile.Id
             });
@@ -75,9 +75,14 @@ public sealed class FileSpliterService
         await _bus.PublishBatch(toPublish);
         await Task.WhenAll(insertSubFileTasks);
         await _mongoDbContext.Reconciliation.InsertOneAsync(_mongoDbContext.Session, mainFile);
-
+        await _bus.Publish(new FileSplit
+        {
+            ReconciliationId = mainFile.Id,
+            TotalSubFiles = mainFile.TotalSubFiles,
+            TotalLines = mainFile.TotalLines
+        });
         await _mongoDbContext.CommitAsync();
-        
+
         _logger.LogInformation("File {FilePath} processed successfully", fileToProcess.Path);
         _logger.LogInformation("Total subfiles created: {Count}", mainFile.TotalSubFiles);
     }
