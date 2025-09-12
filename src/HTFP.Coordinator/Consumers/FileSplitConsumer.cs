@@ -5,13 +5,14 @@ using System;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using OpenTelemetry;
+using HTFP.Services;
 
 namespace HTFP.Coordinator.Consumers;
 
 public record FileSplitConsumer : IConsumer<FileSplit>
 {
     private readonly ILogger<FileSplitConsumer> _logger;
-
+    private readonly CoordinatorService _coordinatorService;
     public async Task Consume(ConsumeContext<FileSplit> context)
     {
         var fileId = Baggage.Current.GetBaggage("file.id");
@@ -20,7 +21,8 @@ public record FileSplitConsumer : IConsumer<FileSplit>
 
         try
         {
-            
+            await _coordinatorService.StartAsync(context.Message);
+            _logger.LogInformation("FileSplit {fileid} message processed.", context.Message.ReconciliationId);
         }
         catch (Exception ex)
         {
