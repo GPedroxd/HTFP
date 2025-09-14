@@ -1,5 +1,18 @@
-services:
-  filespliter:
+services:  
+  coordinator:
+    container_name: coordinator
+    build: 
+      context: .
+      dockerfile: ./src/HTFP.Coordinator/dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      aspire-dashboard:
+        condition: service_started
+  filesplitter:
+    container_name: fileplitter
     build: 
       context: .
       dockerfile: ./src/HTFP.FileSpliter/dockerfile
@@ -8,8 +21,11 @@ services:
     environment:
       - DATA_FOLDER=/etc/data
     depends_on:
-      - rabbitmq
-      - aspire-dashboard
+      rabbitmq:
+        condition: service_healthy
+      aspire-dashboard:
+        condition: service_started
+
   subfileprocessor:
     build: 
       context: .
@@ -19,10 +35,13 @@ services:
     environment:
       - DATA_FOLDER=/etc/data
     depends_on:
-      - rabbitmq
-      - aspire-dashboard
+      rabbitmq:
+        condition: service_healthy
+      aspire-dashboard:
+        condition: service_started
 
   aspire-dashboard:
+    container_name: aspire-dashboard
     image: mcr.microsoft.com/dotnet/aspire-dashboard:9.3
     ports:
       - "18888:18888"
@@ -31,12 +50,30 @@ services:
 
   rabbitmq:
     image: "rabbitmq:3-management"
+    container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: "guest"
       RABBITMQ_DEFAULT_PASS: "guest"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    container_name: redis
+    image: "redis:8.2.1-alpine"
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
 
 # Uncomment the following to use a named volume instead of a bind mount
 # volumes:

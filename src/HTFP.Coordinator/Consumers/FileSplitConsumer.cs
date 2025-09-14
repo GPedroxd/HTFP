@@ -13,6 +13,13 @@ public record FileSplitConsumer : IConsumer<FileSplit>
 {
     private readonly ILogger<FileSplitConsumer> _logger;
     private readonly CoordinatorService _coordinatorService;
+
+    public FileSplitConsumer(ILogger<FileSplitConsumer> logger, CoordinatorService coordinatorService)
+    {
+        _logger = logger;
+        _coordinatorService = coordinatorService;
+    }
+
     public async Task Consume(ConsumeContext<FileSplit> context)
     {
         var fileId = Baggage.Current.GetBaggage("file.id");
@@ -21,8 +28,8 @@ public record FileSplitConsumer : IConsumer<FileSplit>
 
         try
         {
+            _logger.LogInformation("FileSplit {fileid} message processing.", context.Message.ReconciliationId);
             await _coordinatorService.StartAsync(context.Message);
-            _logger.LogInformation("FileSplit {fileid} message processed.", context.Message.ReconciliationId);
         }
         catch (Exception ex)
         {

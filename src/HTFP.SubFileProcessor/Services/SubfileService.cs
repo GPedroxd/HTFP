@@ -7,6 +7,7 @@ using HTFP.Shared.Bus.Messages;
 using HTFP.Shared.Db;
 using HTFP.Shared.Models;
 using HTFP.Shared.Storage;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
@@ -14,17 +15,19 @@ namespace HTFP.SubFileProcessor.Services;
 
 public sealed class SubfileService
 {
-    
+
     private readonly string _dataFolder = Environment.GetEnvironmentVariable("DATA_FOLDER") ?? "/etc/data";
     private readonly ILogger<SubfileService> _logger;
     private readonly IOrderExtractor _orderExtractor;
     private readonly MongoDbContext _dbContext;
+    private readonly IBus _bus;
 
-    public SubfileService(ILogger<SubfileService> logger, IOrderExtractor orderExtractor, MongoDbContext dbContext)
+    public SubfileService(ILogger<SubfileService> logger, IOrderExtractor orderExtractor, MongoDbContext dbContext, IBus bus)
     {
         _logger = logger;
         _orderExtractor = orderExtractor;
         _dbContext = dbContext;
+        _bus = bus;
     }
 
     public async Task ProcessSubfileAsync(ProcessSubFile processSubFile)
@@ -50,10 +53,21 @@ public sealed class SubfileService
             _logger.LogWarning("No existing orders found for sub-file: {FileName}", processSubFile.FilePath);
             subFile.MarkAsPartiallyProcessed();
             await _dbContext.SubFile.ReplaceOneAsync(f => f.Id == subFile.Id, subFile);
+
+            await _bus.Publish(new SubFileProcessed
+            {
+                ReconciliationId = processSubFile.ReconciliationId,
+                Id = processSubFile.Id,
+                TotalProcessed = ordersExecuted.Count
+            });
+            
             return;
         }
 
         var ordersDivergents = OrderComparer.GetDivergentOrders(ordersExecuted, existingOrders);
+
+        _logger.LogInformation("Sub-file: {FileName} processed. Total Executed Orders: {TotalExecuted}, Divergent Orders: {DivergentOrders}",
+            processSubFile.FilePath, ordersExecuted.Count, ordersDivergents.Count);
 
         subFile.MarkasAsProcessed(ordersDivergents.Count);
 
@@ -61,6 +75,13 @@ public sealed class SubfileService
             SaveDivergentOrders(subFile, ordersDivergents);
 
         await _dbContext.SubFile.ReplaceOneAsync(f => f.Id == subFile.Id, subFile);
+
+        await _bus.Publish(new SubFileProcessed
+        {
+            ReconciliationId = processSubFile.ReconciliationId,
+            Id = processSubFile.Id,
+            TotalProcessed = ordersExecuted.Count
+        });
     }
 
     private void SaveDivergentOrders(SubFile subFile, IEnumerable<(ExecutionOrder executedOrder, ExecutionOrder expectedOrder)> divergentOrders)
@@ -75,16 +96,16 @@ public sealed class SubfileService
 
         foreach (var (executedOrder, expectedOrder) in divergentOrders)
         {
-            writer.WriteLine($"{expectedOrder.Id},{executedOrder.ExternalId},"+
-                             $"{expectedOrder.DateTime},{executedOrder.DateTime},"+
-                             $"{expectedOrder.AssetId},{executedOrder.AssetId},"+
-                             $"{expectedOrder.TradingAccount},{executedOrder.TradingAccount},"+
-                             $"{expectedOrder.Quantity},{executedOrder.Quantity},"+
+            writer.WriteLine($"{expectedOrder.Id},{executedOrder.ExternalId}," +
+                             $"{expectedOrder.DateTime},{executedOrder.DateTime}," +
+                             $"{expectedOrder.AssetId},{executedOrder.AssetId}," +
+                             $"{expectedOrder.TradingAccount},{executedOrder.TradingAccount}," +
+                             $"{expectedOrder.Quantity},{executedOrder.Quantity}," +
                              $"{expectedOrder.UnitPrice},{executedOrder.UnitPrice}"
                             );
         }
-        
+
         writer.Flush();
         writer.Close();
-    }    
+    }
 }
