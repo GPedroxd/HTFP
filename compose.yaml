@@ -40,6 +40,19 @@ services:
       aspire-dashboard:
         condition: service_started
 
+  fileaggregator:
+    container_name: fileaggregator
+    build:
+      context: .
+      dockerfile: ./src/HTFP.FileAggregator/dockerfile
+    volumes:
+      - ./samples:/etc/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      aspire-dashboard:
+        condition: service_started
+
   aspire-dashboard:
     container_name: aspire-dashboard
     image: mcr.microsoft.com/dotnet/aspire-dashboard:9.3

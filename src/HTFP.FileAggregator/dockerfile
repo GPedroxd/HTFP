@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY src/HTFP.FileAggregator/HTFP.FileAggregator.csproj ./HTFP.FileAggregator/
+COPY src/HTFP.Shared/HTFP.Shared.csproj ./HTFP.Shared/
+
+RUN dotnet restore ./HTFP.FileAggregator/HTFP.FileAggregator.csproj
+
+COPY . .
+
+RUN dotnet publish ./src/HTFP.FileAggregator/HTFP.FileAggregator.csproj \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+ENTRYPOINT ["dotnet", "HTFP.FileAggregator.dll"]
