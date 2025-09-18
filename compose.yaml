@@ -11,8 +11,9 @@ services:
         condition: service_healthy
       aspire-dashboard:
         condition: service_started
+ 
   filesplitter:
-    container_name: fileplitter
+    container_name: file-splitter
     build: 
       context: .
       dockerfile: ./src/HTFP.FileSpliter/dockerfile
@@ -41,7 +42,7 @@ services:
         condition: service_started
 
   fileaggregator:
-    container_name: fileaggregator
+    container_name: file-aggregator
     build:
       context: .
       dockerfile: ./src/HTFP.FileAggregator/dockerfile
