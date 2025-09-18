@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using DnsClient.Internal;
 using HTFP.Services;
@@ -21,6 +22,9 @@ public class SubFileProcessedConsumer : IConsumer<SubFileProcessed>
 
     public Task Consume(ConsumeContext<SubFileProcessed> context)
     {
+        var activity = Activity.Current;
+        activity?.SetTag("file.id", context.Message.ReconciliationId);
+
         try
         {
             _logger.LogInformation("SubFileProcessed {Id} message processing.", context.Message.Id);

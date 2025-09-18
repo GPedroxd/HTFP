@@ -1,16 +1,85 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
+using HTFP.FileAggregator.Services;
+using HTFP.Shared.Bus;
+using HTFP.Shared.Db;
+using MassTransit;
+using MassTransit.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Core;
+
 namespace HTFP.FileAggregator;
 
 public class Program
 {
+    private const string otelUrl = "http://aspire-dashboard:18889";
+    private static Dictionary<string, object> OTAtt = new Dictionary<string, object>
+                                        {
+                                            {"service.name", "HTFP.FileAggregator"},
+                                            {"service.version", "1.0.0"},
+                                            {"service.instance.id", Environment.MachineName}
+                                        };
+    private static Logger logger = new LoggerConfiguration()
+                                .MinimumLevel.Information()
+                                .WriteTo.Console()
+                                .WriteTo.OpenTelemetry(opts =>
+                                {
+                                    opts.ResourceAttributes = OTAtt;
+                                    opts.Endpoint = otelUrl;
+                                }, ignoreEnvironment: true)
+                                .CreateLogger();
+
     public static async Task Main(string[] args)
-    {
-        await CreateHostBuilder(args).Build().RunAsync();
-    }
+        => await CreateHostBuilder(args).Build().RunAsync();
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                Log.Logger = logger;
+                logging.AddSerilog(logger);
+            })
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                var env = context.HostingEnvironment;
+                config.SetBasePath(env.ContentRootPath);
+                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                config.AddEnvironmentVariables();
+            })
             .ConfigureServices((hostContext, services) =>
             {
+                var enviroment = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
+                var rabbitConfig = hostContext.Configuration.GetSection(nameof(RabbitMQConfig)).Get<RabbitMQConfig>();
+
+                services.AddMongoDbContext<MongoDbContext>();
+                services.AddTransient<FileAggregatorService>();
+
+                services.AddOpenTelemetry()
+                    .ConfigureResource(builder =>
+                    {
+                        builder.AddService("HTFP.FileAggregator")
+                            .AddAttributes(OTAtt);
+                    })
+                    .WithTracing(tracing =>
+                    {
+                        tracing.AddAspNetCoreInstrumentation();
+                        // tracing.AddSource(SubFileProcessorDiagnosticsConfig.ServiceName);
+                        tracing.AddSource(DiagnosticHeaders.DefaultListenerName);
+                        tracing.AddOtlpExporter(options =>
+                        {
+                            options.Endpoint = new Uri(otelUrl);
+                        });
+                    });
+
                 services.AddMassTransit(x =>
                 {
                     x.SetKebabCaseEndpointNameFormatter();
@@ -26,11 +95,16 @@ public class Program
                     x.AddSagas(entryAssembly);
                     x.AddActivities(entryAssembly);
 
-                    x.UsingInMemory((context, cfg) =>
+                    x.UsingRabbitMq((hostContext, cfg) =>
                     {
-                        cfg.ConfigureEndpoints(context);
+                        cfg.Host(rabbitConfig.Host, "/", h =>
+                        {
+                            h.Username(rabbitConfig.Username);
+                            h.Password(rabbitConfig.Password);
+                        });
+
+                        cfg.ConfigureEndpoints(hostContext);
                     });
                 });
             });
 }
-

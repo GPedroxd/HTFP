@@ -85,7 +85,6 @@ public class Program
                         });
                     });
 
-
                 services.AddMassTransit(x =>
                 {
                     x.SetKebabCaseEndpointNameFormatter();
