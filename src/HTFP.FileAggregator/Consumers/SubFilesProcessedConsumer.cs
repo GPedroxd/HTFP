@@ -31,7 +31,7 @@ public class SubFilesProcessedConsumer : IConsumer<SubFilesProcessed>
 
         try
         {
-            await _fileAggregatorService.AggregateFilesAsync();
+            await _fileAggregatorService.AggregateFilesAsync(context.Message);
         }
         catch (Exception ex)
         {

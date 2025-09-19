@@ -29,7 +29,8 @@ public class CoordinatorService
             new HashEntry("ReconciliationId", splitFile.ReconciliationId.ToString()),
             new HashEntry("Expected", splitFile.TotalLines),
             new HashEntry("Processed", 0),
-            new HashEntry("FilesProcessed", 0)
+            new HashEntry("FilesProcessed", 0),
+            new HashEntry("Divergents", 0)
         };
 
         await _cache.HashSetAsync(cacheKey, hashEntries);
@@ -42,6 +43,7 @@ public class CoordinatorService
         var cacheKey = $"file:{subFileSplited.ReconciliationId}";
         await _cache.HashIncrementAsync(cacheKey, "Processed", subFileSplited.TotalProcessed);
         await _cache.HashIncrementAsync(cacheKey, "FilesProcessed", 1);
+        await _cache.HashIncrementAsync(cacheKey, "Divergents", subFileSplited.TotalDivergents);
 
         await _cache.HashGetAllAsync(cacheKey);
 
@@ -55,9 +57,14 @@ public class CoordinatorService
 
         _logger.LogInformation("All subfiles for {ReconciliationId} have been processed. Total lines processed: {TotalProcessed}.", subFileSplited.ReconciliationId, processed);
 
+        var divergents = (int)await _cache.HashGetAsync(cacheKey, "Divergents");
+
+        _logger.LogInformation("Total divergent lines for {ReconciliationId}: {Divergents}.", subFileSplited.ReconciliationId, divergents);
+
         await _bus.Publish(new SubFilesProcessed
         {
-            ReconciliationId = subFileSplited.ReconciliationId
+            ReconciliationId = subFileSplited.ReconciliationId,
+            Divergents = divergents
         });
     }
 }
