@@ -41,7 +41,7 @@ public sealed class SubFile
         if (HasDivergentsOrders)
             OutputPath = $"{ReconciliationFileId}/subfilesOutput/{Name}-divergents.csv";
     }
-    
+
     public void MarkAsPartiallyProcessed()
     {
         Status = FileStatus.PartiallyProcessed;

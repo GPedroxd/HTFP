@@ -9,6 +9,7 @@ using HTFP.Shared.Models;
 using HTFP.Shared.Storage;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 
 namespace HTFP.FileSpliter.Services;
 
@@ -29,16 +30,51 @@ public sealed class FileSpliterService
 
     public async Task SplitAsync(SplitFile fileToProcess)
     {
-        var toPublish = new List<ProcessSubFile>();
-        var insertSubFileTasks = new List<Task>();
-
-        var mainFile = new ReconciliationFile($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}.{Guid.NewGuid()}", fileToProcess.Path);
+        var reconcilitonFile = new ReconciliationFile($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}.{Guid.NewGuid()}", fileToProcess.Path);
 
         var currentActivity = Activity.Current;
-        currentActivity?.SetTag("file.id", mainFile.Id);
-        currentActivity?.SetBaggage("file.id", mainFile.Id.ToString());
+        currentActivity?.SetTag("file.id", reconcilitonFile.Id);
+        currentActivity?.SetBaggage("file.id", reconcilitonFile.Id.ToString());
+
+        await _mongoDbContext.Reconciliation.InsertOneAsync(reconcilitonFile);
 
         await _mongoDbContext.StartTransactionAsync();
+
+        try
+        {
+            var (toPublish, insertSubFileTasks) = await ExtractSubfilesAsync(reconcilitonFile, fileToProcess);
+            await Task.WhenAll(insertSubFileTasks);
+            await _bus.PublishBatch(toPublish);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing file {FilePath} with id {id}", fileToProcess.Path, reconcilitonFile.Id);
+            reconcilitonFile.SetAsError(ex.Message);
+            await _mongoDbContext.Reconciliation.ReplaceOneAsync(r => r.Id == reconcilitonFile.Id, reconcilitonFile);
+            throw;
+        }
+
+        reconcilitonFile.SetAsProcessing();
+
+        await _mongoDbContext.Reconciliation.ReplaceOneAsync(r => r.Id == reconcilitonFile.Id, reconcilitonFile);
+        
+        await _bus.Publish(new FileSplit
+        {
+            ReconciliationId = reconcilitonFile.Id,
+            TotalSubFiles = reconcilitonFile.TotalSubFiles,
+            TotalLines = reconcilitonFile.TotalLines
+        });
+
+        await _mongoDbContext.CommitAsync();
+
+        _logger.LogInformation("File {FilePath} processed successfully", fileToProcess.Path);
+        _logger.LogInformation("Total subfiles created: {Count}", reconcilitonFile.TotalSubFiles);
+    }
+
+    private async Task<(List<ProcessSubFile> toPublish, List<Task> insertSubFileTasks)> ExtractSubfilesAsync(ReconciliationFile mainFile, SplitFile fileToProcess)
+    {
+        var toPublish = new List<ProcessSubFile>();
+        var insertSubFileTasks = new List<Task>();
 
         await foreach (var (splitedfile, lineCount) in _fileSpliter.SplitAsync(Path.Combine(_dataFolder, fileToProcess.Path), 10000))
         {
@@ -62,7 +98,7 @@ public sealed class FileSpliterService
 
             await SaveSplitFile(subFile.Path, splitedfile);
 
-            insertSubFileTasks.Add(_mongoDbContext.SubFile.InsertOneAsync(subFile));
+            insertSubFileTasks.Add(_mongoDbContext.SubFile.InsertOneAsync(_mongoDbContext.Session, subFile));
 
             toPublish.Add(new ProcessSubFile
             {
@@ -72,19 +108,7 @@ public sealed class FileSpliterService
             });
         }
 
-        await _bus.PublishBatch(toPublish);
-        await Task.WhenAll(insertSubFileTasks);
-        await _mongoDbContext.Reconciliation.InsertOneAsync(_mongoDbContext.Session, mainFile);
-        await _bus.Publish(new FileSplit
-        {
-            ReconciliationId = mainFile.Id,
-            TotalSubFiles = mainFile.TotalSubFiles,
-            TotalLines = mainFile.TotalLines
-        });
-        await _mongoDbContext.CommitAsync();
-
-        _logger.LogInformation("File {FilePath} processed successfully", fileToProcess.Path);
-        _logger.LogInformation("Total subfiles created: {Count}", mainFile.TotalSubFiles);
+        return (toPublish, insertSubFileTasks);
     }
 
     private async Task SaveSplitFile(string filePath, Stream subfile)

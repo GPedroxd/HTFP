@@ -60,7 +60,7 @@ public sealed class SubfileService
                 Id = processSubFile.Id,
                 TotalProcessed = ordersExecuted.Count
             });
-            
+
             return;
         }
 

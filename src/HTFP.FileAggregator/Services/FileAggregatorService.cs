@@ -26,11 +26,11 @@ public class FileAggregatorService
 
         var reconciliation = _dbContext.Reconciliation.Find(r => r.Id == message.ReconciliationId).FirstOrDefault();
 
-        if(message.Divergents < 1)
+        if (message.Divergents < 1)
         {
             _logger.LogInformation("No divergents found for reconciliation {id}. Skipping file aggregation.", message.ReconciliationId);
-            
-            reconciliation.SetAsFinished();
+
+            reconciliation.SetAsSuccessfullyFinished();
             await _dbContext.Reconciliation.ReplaceOneAsync(r => r.Id == reconciliation.Id, reconciliation);
             return;
         }
@@ -39,7 +39,7 @@ public class FileAggregatorService
 
         MergeFiles(outputPath, Path.Combine(_dataFolder, $"{reconciliation.Id}/subfilesOutput/"));
 
-        reconciliation.SetAsFinished();
+        reconciliation.SetAsSuccessfullyFinished();
 
         await _dbContext.Reconciliation.ReplaceOneAsync(r => r.Id == reconciliation.Id, reconciliation);
     }
