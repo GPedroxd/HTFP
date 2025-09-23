@@ -34,10 +34,35 @@ public sealed class SubfileService
     {
         _logger.LogInformation("Processing sub-file: {FileName}", processSubFile.FilePath);
 
-        var ordersExecuted = new List<ExecutionOrder>();
+        var subFile = await _dbContext.SubFile.Find(f => f.Id == processSubFile.Id).FirstOrDefaultAsync();
 
-        await foreach (var order in _orderExtractor.ExtractOrdersAsync(processSubFile.FilePath))
-            ordersExecuted.Add(order);
+        subFile.MarkAsProcessing();
+
+        await _dbContext.SubFile.ReplaceOneAsync(f => f.Id == subFile.Id, subFile);
+
+        List<ExecutionOrder> ordersExecuted;
+
+        try
+        {
+            ordersExecuted = await ExtractOrdersAsync(processSubFile);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing sub-file {FileName}", processSubFile.FilePath);
+            subFile.SetAsError(ex.Message);
+    
+            await _dbContext.SubFile.ReplaceOneAsync(f => f.Id == subFile.Id, subFile);
+
+            await _bus.Publish(new SubFileProcessed
+            {
+                ReconciliationId = processSubFile.ReconciliationId,
+                Id = processSubFile.Id,
+                SuccessfullyProcessed = false,
+                TotalDivergents = 0
+            });
+
+            return;
+        }
 
         var minDateFilter = ordersExecuted.Min(o => o.DateTime);
         var maxDateFilter = ordersExecuted.Max(o => o.DateTime);
@@ -45,8 +70,6 @@ public sealed class SubfileService
         var existingOrders = await (await _dbContext.ExecutionOrder
             .FindAsync(o => o.DateTime >= minDateFilter && o.DateTime <= maxDateFilter))
             .ToListAsync();
-
-        var subFile = await _dbContext.SubFile.Find(f => f.Id == processSubFile.Id).FirstOrDefaultAsync();
 
         if (!existingOrders.Any())
         {
@@ -58,7 +81,8 @@ public sealed class SubfileService
             {
                 ReconciliationId = processSubFile.ReconciliationId,
                 Id = processSubFile.Id,
-                TotalProcessed = ordersExecuted.Count
+                SuccessfullyProcessed = false,
+                TotalDivergents = 0
             });
 
             return;
@@ -80,8 +104,19 @@ public sealed class SubfileService
         {
             ReconciliationId = processSubFile.ReconciliationId,
             Id = processSubFile.Id,
-            TotalProcessed = ordersExecuted.Count
+            SuccessfullyProcessed = true,
+            TotalDivergents = ordersDivergents.Count
         });
+    }
+
+    private async Task<List<ExecutionOrder>> ExtractOrdersAsync(ProcessSubFile processSubFile)
+    {
+        var ordersExecuted = new List<ExecutionOrder>();
+
+        await foreach (var order in _orderExtractor.ExtractOrdersAsync(processSubFile.FilePath))
+            ordersExecuted.Add(order);
+
+        return ordersExecuted;
     }
 
     private void SaveDivergentOrders(SubFile subFile, IEnumerable<(ExecutionOrder executedOrder, ExecutionOrder expectedOrder)> divergentOrders)

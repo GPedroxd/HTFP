@@ -88,13 +88,12 @@ public sealed class FileSpliterService
                         fileName
                     );
 
-            var subFile = new SubFile
-            {
-                Name = fileName,
-                Path = filePath,
-                ReconciliationFileId = mainFile.Id,
-                TotalLines = lineCount
-            };
+            var subFile = new SubFile(
+                fileName,
+                filePath,
+                mainFile.Id,
+                lineCount
+            );
 
             await SaveSplitFile(subFile.Path, splitedfile);
 

@@ -27,10 +27,10 @@ public class CoordinatorService
         var hashEntries = new HashEntry[]
         {
             new HashEntry("ReconciliationId", splitFile.ReconciliationId.ToString()),
-            new HashEntry("Expected", splitFile.TotalLines),
-            new HashEntry("Processed", 0),
+            new HashEntry("TotalFiles", splitFile.TotalSubFiles),
             new HashEntry("FilesProcessed", 0),
-            new HashEntry("Divergents", 0)
+            new HashEntry("Divergents", 0),
+            new HashEntry("Error", false)
         };
 
         await _cache.HashSetAsync(cacheKey, hashEntries);
@@ -41,21 +41,24 @@ public class CoordinatorService
     public async Task SetFinishedSubFile(SubFileProcessed subFileSplited)
     {
         var cacheKey = $"file:{subFileSplited.ReconciliationId}";
-        await _cache.HashIncrementAsync(cacheKey, "Processed", subFileSplited.TotalProcessed);
         await _cache.HashIncrementAsync(cacheKey, "FilesProcessed", 1);
         await _cache.HashIncrementAsync(cacheKey, "Divergents", subFileSplited.TotalDivergents);
 
         await _cache.HashGetAllAsync(cacheKey);
 
-        var expected = (int)await _cache.HashGetAsync(cacheKey, "Expected");
-        var processed = (int)await _cache.HashGetAsync(cacheKey, "Processed");
+        var filesExpected = (int)await _cache.HashGetAsync(cacheKey, "TotalFiles");
+        var fileProcessed = (int)await _cache.HashGetAsync(cacheKey, "FilesProcessed");
+        var error = (bool)await _cache.HashGetAsync(cacheKey, "Error");
+        
+        if(subFileSplited.SuccessfullyProcessed is false && error is false)
+            await _cache.HashSetAsync(cacheKey, "Error", true);
+        
+        _logger.LogInformation("Subfile {Id} processed for {ReconciliationId}. Total files processed: {TotalProcessed}/{Expected}.", subFileSplited.Id, subFileSplited.ReconciliationId, fileProcessed, filesExpected);
 
-        _logger.LogInformation("Subfile {Id} processed for {ReconciliationId}. Total processed lines: {TotalProcessed}/{Expected}.", subFileSplited.Id, subFileSplited.ReconciliationId, processed, expected);
-
-        if (expected != processed)
+        if (filesExpected != fileProcessed)
             return;
 
-        _logger.LogInformation("All subfiles for {ReconciliationId} have been processed. Total lines processed: {TotalProcessed}.", subFileSplited.ReconciliationId, processed);
+        _logger.LogInformation("All subfiles for {ReconciliationId} have been processed. Total files processed: {TotalProcessed}.", subFileSplited.ReconciliationId, fileProcessed);
 
         var divergents = (int)await _cache.HashGetAsync(cacheKey, "Divergents");
 
