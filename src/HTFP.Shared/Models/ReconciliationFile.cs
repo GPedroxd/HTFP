@@ -13,9 +13,9 @@ public sealed class ReconciliationFile
     public int TotalLines { get => _totalLines; private set => _totalLines = value; }
     private int _totalSubFiles;
     public int TotalSubFiles { get => _totalSubFiles; private set => _totalSubFiles = value; }     
-    private IList<StatusRecord> _statusRecords = new List<StatusRecord>();
+    internal IList<StatusRecord> _statusRecords = new List<StatusRecord>();
     public IReadOnlyCollection<StatusRecord> StatusRecords { get => _statusRecords.AsReadOnly(); }
-    public FileStatus CurrentStatus { get => _statusRecords.Last().Status; }
+    public string CurrentStatus { get => _statusRecords.Last().Status.ToString(); private set { } }
     public DateTime StartProcessingDate { get; private set; } = DateTime.UtcNow;
     public DateTime? EndProcessingDate { get; private set; }
     

@@ -11,9 +11,9 @@ public sealed class SubFile
     public string? OutputPath { get; private set; }
     public Guid ReconciliationFileId { get; init; }
     public int TotalLines { get; init; }    
-    private IList<StatusRecord> _statusRecords = new List<StatusRecord>();
+    internal IList<StatusRecord> _statusRecords = new List<StatusRecord>();
     public IReadOnlyCollection<StatusRecord> StatusRecords { get => _statusRecords.AsReadOnly(); }
-    public FileStatus Status { get => _statusRecords.Last().Status; }
+    public string Status { get => _statusRecords.Last().Status.ToString(); private set { } }
     public DateTime? StartProcessingDate { get; private set; }
     public DateTime? EndProcessingDate { get; private set; }
     public TimeSpan? ProcessingTime

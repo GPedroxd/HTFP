@@ -1,3 +1,4 @@
+using HTFP.Shared.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson.Serialization;
@@ -13,6 +14,7 @@ public static class MongodbExtensions
         where TContext : MongoDbContext
     {
         BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.BsonType.String));
+        Mappings.RegisterMappings();
 
         var environment = services.BuildServiceProvider()
             .GetRequiredService<IConfiguration>();
