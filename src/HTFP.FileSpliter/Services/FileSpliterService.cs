@@ -28,7 +28,7 @@ public sealed class FileSpliterService
         _mongoDbContext = mongoDbContext;
     }
 
-    public async Task SplitAsync(SplitFile fileToProcess)
+    public async Task SplitAsync(StartReconciliationProcess fileToProcess)
     {
         var reconcilitonFile = new ReconciliationFile($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}.{Guid.NewGuid()}", fileToProcess.Path);
 
@@ -58,7 +58,7 @@ public sealed class FileSpliterService
 
         await _mongoDbContext.Reconciliation.ReplaceOneAsync(r => r.Id == reconcilitonFile.Id, reconcilitonFile);
         
-        await _bus.Publish(new FileSplit
+        await _bus.Publish(new SplitFile
         {
             ReconciliationId = reconcilitonFile.Id,
             TotalSubFiles = reconcilitonFile.TotalSubFiles,
@@ -71,7 +71,7 @@ public sealed class FileSpliterService
         _logger.LogInformation("Total subfiles created: {Count}", reconcilitonFile.TotalSubFiles);
     }
 
-    private async Task<(List<ProcessSubFile> toPublish, List<Task> insertSubFileTasks)> ExtractSubfilesAsync(ReconciliationFile mainFile, SplitFile fileToProcess)
+    private async Task<(List<ProcessSubFile> toPublish, List<Task> insertSubFileTasks)> ExtractSubfilesAsync(ReconciliationFile mainFile, StartReconciliationProcess fileToProcess)
     {
         var toPublish = new List<ProcessSubFile>();
         var insertSubFileTasks = new List<Task>();

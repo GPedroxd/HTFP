@@ -10,7 +10,7 @@ using OpenTelemetry;
 
 namespace HTFP.FileAggregator.Consumers;
 
-public class SubFilesProcessedConsumer : IConsumer<SubFilesProcessed>
+public class SubFilesProcessedConsumer : IConsumer<AggregateReconciliationResult>
 {
     private readonly ILogger<SubFilesProcessedConsumer> _logger;
     private readonly FileAggregatorService _fileAggregatorService;
@@ -21,7 +21,7 @@ public class SubFilesProcessedConsumer : IConsumer<SubFilesProcessed>
         _fileAggregatorService = fileAggregatorService;
     }
 
-    public async Task Consume(ConsumeContext<SubFilesProcessed> context)
+    public async Task Consume(ConsumeContext<AggregateReconciliationResult> context)
     {
         var fileId = Baggage.Current.GetBaggage("file.id");
         var activity = Activity.Current;

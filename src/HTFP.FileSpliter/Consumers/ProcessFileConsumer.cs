@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace HTFP.FileSpliter.Consumers;
 
-public sealed class SplitFileConsumer : IConsumer<SplitFile>
+public sealed class SplitFileConsumer : IConsumer<StartReconciliationProcess>
 {
     private readonly ILogger<SplitFileConsumer> _logger;
     private readonly FileSpliterService _fileSpliterService;
@@ -17,7 +17,7 @@ public sealed class SplitFileConsumer : IConsumer<SplitFile>
         _fileSpliterService = fileSpliterService;
     }
 
-    public async Task Consume(ConsumeContext<SplitFile> context)
+    public async Task Consume(ConsumeContext<StartReconciliationProcess> context)
     {
         using var activity = FileSpliterDiagnosticsConfig.ActivitySource.StartActivity("HTPF.FileSpliter");
         

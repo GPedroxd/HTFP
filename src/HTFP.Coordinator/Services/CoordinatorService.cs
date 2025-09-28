@@ -20,7 +20,7 @@ public class CoordinatorService
         _bus = bus;
     }
 
-    public async Task StartAsync(FileSplit splitFile)
+    public async Task StartAsync(SplitFile splitFile)
     {
         var cacheKey = $"file:{splitFile.ReconciliationId}";
 
@@ -64,7 +64,7 @@ public class CoordinatorService
 
         _logger.LogInformation("Total divergent lines for {ReconciliationId}: {Divergents}.", subFileSplited.ReconciliationId, divergents);
 
-        await _bus.Publish(new SubFilesProcessed
+        await _bus.Publish(new AggregateReconciliationResult
         {
             ReconciliationId = subFileSplited.ReconciliationId,
             Divergents = divergents

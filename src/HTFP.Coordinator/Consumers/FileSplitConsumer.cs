@@ -9,7 +9,7 @@ using HTFP.Services;
 
 namespace HTFP.Coordinator.Consumers;
 
-public record FileSplitConsumer : IConsumer<FileSplit>
+public record FileSplitConsumer : IConsumer<SplitFile>
 {
     private readonly ILogger<FileSplitConsumer> _logger;
     private readonly CoordinatorService _coordinatorService;
@@ -20,7 +20,7 @@ public record FileSplitConsumer : IConsumer<FileSplit>
         _coordinatorService = coordinatorService;
     }
 
-    public async Task Consume(ConsumeContext<FileSplit> context)
+    public async Task Consume(ConsumeContext<SplitFile> context)
     {
         var fileId = Baggage.Current.GetBaggage("file.id");
         var activity = Activity.Current;

@@ -20,7 +20,7 @@ public class FileAggregatorService
         _dbContext = dbContext;
     }
 
-    public async Task AggregateFilesAsync(SubFilesProcessed message)
+    public async Task AggregateFilesAsync(AggregateReconciliationResult message)
     {
         _logger.LogInformation("Starting file aggregation process for reconciliation {id}.", message.ReconciliationId);
 
